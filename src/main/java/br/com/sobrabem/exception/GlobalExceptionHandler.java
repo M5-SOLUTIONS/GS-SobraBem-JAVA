@@ -3,6 +3,8 @@ package br.com.sobrabem.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -73,6 +75,14 @@ public class GlobalExceptionHandler {
         }
         log.error("Erro inesperado", ex);
         return erro(CodigoErro.ERRO_INTERNO, "Erro inesperado no servidor", List.of());
+    }
+
+    /** ?sort=campoQueNaoExiste */
+    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
+    public ResponseEntity<ProblemDetail> ordenacaoInvalida(RuntimeException ex) {
+        log.warn("Parâmetro de consulta inválido: {}", ex.getMessage());
+        return erro(CodigoErro.VALIDACAO, "1 campo inválido",
+                List.of(new CampoErro("sort", "campo de ordenação inválido")));
     }
 
     private ResponseEntity<ProblemDetail> erro(CodigoErro codigo, String detalhe, List<CampoErro> erros) {
