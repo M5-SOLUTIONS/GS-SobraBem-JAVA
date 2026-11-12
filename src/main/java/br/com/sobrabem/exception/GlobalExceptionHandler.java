@@ -16,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import tools.jackson.core.JacksonException;
 
 import java.net.URI;
 import java.time.Instant;
@@ -42,6 +43,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> jsonInvalido(HttpMessageNotReadableException ex) {
+        if (ex.getCause() instanceof JacksonException je && !je.getPath().isEmpty()) {
+            String campo = je.getPath().getLast().getPropertyName();
+            if (campo != null) {
+                return erro(CodigoErro.VALIDACAO, "1 campo inválido",
+                        List.of(new CampoErro(campo, "valor inválido")));
+            }
+        }
         return erro(CodigoErro.VALIDACAO, "Corpo da requisição ausente ou com JSON inválido", List.of());
     }
 
