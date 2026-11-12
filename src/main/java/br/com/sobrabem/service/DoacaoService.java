@@ -8,6 +8,7 @@ import br.com.sobrabem.domain.enums.StatusDoacao;
 import br.com.sobrabem.domain.enums.StatusReserva;
 import br.com.sobrabem.dto.request.DoacaoRequest;
 import br.com.sobrabem.dto.response.DoacaoResponse;
+import br.com.sobrabem.dto.response.ReservaResponse;
 import br.com.sobrabem.exception.CodigoErro;
 import br.com.sobrabem.exception.NegocioException;
 import br.com.sobrabem.repository.CategoriaRepository;
@@ -59,6 +60,13 @@ public class DoacaoService {
     public Page<DoacaoResponse> vitrine(Long categoriaId, String cidade, Pageable pageable) {
         String filtroCidade = (cidade == null || cidade.isBlank()) ? null : cidade.trim();
         return doacoes.buscarVitrine(Instant.now(), categoriaId, filtroCidade, pageable).map(DoacaoResponse::de);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ReservaResponse> reservasDaDoacao(Long doadorId, Long id, StatusReserva status, Pageable pageable) {
+        Doacao doacao = buscarEntidade(id);
+        exigirDono(doacao, doadorId);
+        return reservas.buscarDaDoacao(id, status, pageable).map(r -> ReservaResponse.de(r, false));
     }
 
     @Transactional(readOnly = true)

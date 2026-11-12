@@ -5,10 +5,7 @@ import br.com.sobrabem.domain.enums.StatusDoacao;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -40,6 +37,20 @@ public interface DoacaoRepository extends JpaRepository<Doacao, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select d from Doacao d where d.id = :id")
     Optional<Doacao> buscarParaAtualizar(@Param("id") Long id);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update Doacao d
+               set d.quantidadeDisponivel = d.quantidadeDisponivel - :qtd,
+                   d.status = case when d.quantidadeDisponivel - :qtd = 0
+                                   then br.com.sobrabem.domain.enums.StatusDoacao.ESGOTADA
+                                   else d.status end
+             where d.id = :id
+               and d.status = br.com.sobrabem.domain.enums.StatusDoacao.ATIVA
+               and d.prazoRetirada > :agora
+               and d.quantidadeDisponivel >= :qtd
+            """)
+    int descontarSaldo(@Param("id") Long id, @Param("qtd") int quantidade, @Param("agora") Instant agora);
 
     boolean existsByCategoriaId(Long categoriaId);
 
