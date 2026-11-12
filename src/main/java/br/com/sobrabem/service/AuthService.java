@@ -38,8 +38,6 @@ public class AuthService {
         List<CampoErro> erros = new ArrayList<>();
         if (req.papel() == Papel.ADMIN) {
             erros.add(new CampoErro("papel", "ADMIN não pode se cadastrar pela API"));
-        } else if (!req.tipoPerfil().compativelCom(req.papel())) {
-            erros.add(new CampoErro("tipoPerfil", "não é compatível com o papel " + req.papel()));
         }
         if (req.papel() == Papel.DOADOR && isBlank(req.endereco())) {
             erros.add(new CampoErro("endereco", "é obrigatório para doador"));
@@ -52,11 +50,10 @@ public class AuthService {
         // endereço é o local de retirada: só faz sentido para doador
         String endereco = req.papel() == Papel.DOADOR ? req.endereco().trim() : null;
         Usuario usuario = new Usuario(req.nome().trim(), email, passwordEncoder.encode(req.senha()),
-                req.telefone(), req.papel(), req.tipoPerfil(), endereco, req.cidade().trim(), req.uf());
+                req.telefone(), req.papel(), endereco, req.cidade().trim(), req.uf());
         try {
             usuarios.saveAndFlush(usuario);
         } catch (DataIntegrityViolationException e) {
-            // dois cadastros simultâneos com o mesmo e-mail: o UNIQUE do Oracle barra o segundo
             throw emailEmUso();
         }
         return UsuarioResponse.de(usuario);

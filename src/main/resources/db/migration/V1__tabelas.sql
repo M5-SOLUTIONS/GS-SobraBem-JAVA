@@ -15,7 +15,6 @@ CREATE TABLE sb_t_usuario (
     senha_hash   VARCHAR2(100) NOT NULL,
     telefone     VARCHAR2(20),
     papel        VARCHAR2(10)  NOT NULL,
-    tipo_perfil  VARCHAR2(15),
     endereco     VARCHAR2(200),
     cidade       VARCHAR2(80),
     uf           CHAR(2),
@@ -24,7 +23,6 @@ CREATE TABLE sb_t_usuario (
     CONSTRAINT sb_pk_usuario        PRIMARY KEY (id_usuario),
     CONSTRAINT sb_uk_usuario_email  UNIQUE (email),
     CONSTRAINT sb_ck_usuario_papel  CHECK (papel IN ('DOADOR', 'RECEPTOR', 'ADMIN')),
-    CONSTRAINT sb_ck_usuario_perfil CHECK (tipo_perfil IN ('PADARIA', 'FEIRA', 'MERCADO', 'ONG', 'FAMILIA')),
     CONSTRAINT sb_ck_usuario_ativo  CHECK (ativo IN ('S', 'N'))
 );
 

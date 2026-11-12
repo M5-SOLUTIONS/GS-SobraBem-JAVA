@@ -44,7 +44,7 @@ public class AdminInicial implements ApplicationRunner {
             return;
         }
         usuarios.save(new Usuario("Equipe SobraBem", email.trim().toLowerCase(Locale.ROOT),
-                passwordEncoder.encode(senha), null, Papel.ADMIN, null, null, null, null));
+                passwordEncoder.encode(senha), null, Papel.ADMIN, null, null, null));
         log.info("ADMIN inicial criado: {}", email);
     }
 }
