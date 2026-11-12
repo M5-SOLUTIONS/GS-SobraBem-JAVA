@@ -2,7 +2,6 @@ package br.com.sobrabem.domain.entity;
 
 import br.com.sobrabem.domain.converter.SimNaoConverter;
 import br.com.sobrabem.domain.enums.Papel;
-import br.com.sobrabem.domain.enums.TipoPerfil;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,9 +28,6 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     private Papel papel;
 
-    @Enumerated(EnumType.STRING)
-    private TipoPerfil tipoPerfil;
-
     private String endereco;
     private String cidade;
 
@@ -46,19 +42,19 @@ public class Usuario {
     private Instant criadoEm;
 
     public Usuario(String nome, String email, String senhaHash, String telefone, Papel papel,
-                   TipoPerfil tipoPerfil, String endereco, String cidade, String uf) {
+                   String endereco, String cidade, String uf) {
         this.nome = nome;
         this.email = email;
         this.senhaHash = senhaHash;
         this.telefone = telefone;
         this.papel = papel;
-        this.tipoPerfil = tipoPerfil;
         this.endereco = endereco;
         this.cidade = cidade;
         this.uf = uf;
         this.ativo = true;
     }
 
+    /** criado_em em UTC: o DEFAULT SYSTIMESTAMP gravaria no fuso do servidor Oracle. */
     @PrePersist
     void antesDeInserir() {
         if (criadoEm == null) criadoEm = Instant.now();
