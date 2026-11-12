@@ -1,8 +1,10 @@
 package br.com.sobrabem.controller;
 
 import br.com.sobrabem.domain.enums.StatusDoacao;
+import br.com.sobrabem.domain.enums.StatusReserva;
 import br.com.sobrabem.dto.request.DoacaoRequest;
 import br.com.sobrabem.dto.response.DoacaoResponse;
+import br.com.sobrabem.dto.response.ReservaResponse;
 import br.com.sobrabem.security.Autenticado;
 import br.com.sobrabem.service.DoacaoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +54,19 @@ public class DoacaoController {
             @RequestParam(required = false) String cidade,
             @ParameterObject @PageableDefault(size = 10, sort = "prazoRetirada") Pageable pageable) {
         return new PagedModel<>(service.vitrine(categoriaId, cidade, pageable));
+    }
+
+    @GetMapping("/{id}/reservas")
+    @Operation(summary = "Reservas de uma doação (DOADOR dono)")
+    @ApiResponse(responseCode = "200", description = "Página de reservas")
+    @ApiResponse(responseCode = "403", description = "ACESSO_NEGADO")
+    @ApiResponse(responseCode = "404", description = "NAO_ENCONTRADO")
+    public PagedModel<ReservaResponse> reservas(
+            @AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @RequestParam(required = false) StatusReserva status,
+            @ParameterObject @PageableDefault(size = 10, sort = "criadoEm", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return new PagedModel<>(service.reservasDaDoacao(Autenticado.de(jwt).id(), id, status, pageable));
     }
 
     @GetMapping("/minhas")
