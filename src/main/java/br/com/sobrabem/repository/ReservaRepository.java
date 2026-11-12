@@ -6,9 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +39,16 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     Page<Reserva> buscarDoReceptor(@Param("receptorId") Long receptorId,
                                    @Param("status") StatusReserva status,
                                    Pageable pageable);
+
+    @Modifying
+    @Query("""
+            update Reserva r set r.status = br.com.sobrabem.domain.enums.StatusReserva.EXPIRADA
+             where r.status = br.com.sobrabem.domain.enums.StatusReserva.ATIVA
+               and r.doacao.id in (
+                   select d.id from Doacao d
+                    where d.status in (br.com.sobrabem.domain.enums.StatusDoacao.ATIVA,
+                                       br.com.sobrabem.domain.enums.StatusDoacao.ESGOTADA)
+                      and d.prazoRetirada <= :agora)
+            """)
+    int expirarDeDoacoesVencidas(@Param("agora") Instant agora);
 }

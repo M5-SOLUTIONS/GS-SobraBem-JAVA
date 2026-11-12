@@ -52,6 +52,15 @@ public interface DoacaoRepository extends JpaRepository<Doacao, Long> {
             """)
     int descontarSaldo(@Param("id") Long id, @Param("qtd") int quantidade, @Param("agora") Instant agora);
 
+    @Modifying
+    @Query("""
+            update Doacao d set d.status = br.com.sobrabem.domain.enums.StatusDoacao.EXPIRADA
+             where d.status in (br.com.sobrabem.domain.enums.StatusDoacao.ATIVA,
+                                br.com.sobrabem.domain.enums.StatusDoacao.ESGOTADA)
+               and d.prazoRetirada <= :agora
+            """)
+    int expirarVencidas(@Param("agora") Instant agora);
+
     boolean existsByCategoriaId(Long categoriaId);
 
     boolean existsByDoadorId(Long doadorId);
