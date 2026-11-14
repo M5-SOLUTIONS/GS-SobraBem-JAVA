@@ -4,11 +4,13 @@ import br.com.sobrabem.domain.entity.Categoria;
 import br.com.sobrabem.domain.entity.Doacao;
 import br.com.sobrabem.domain.entity.Reserva;
 import br.com.sobrabem.domain.entity.Usuario;
+import br.com.sobrabem.domain.enums.Papel;
 import br.com.sobrabem.domain.enums.StatusDoacao;
 import br.com.sobrabem.domain.enums.StatusReserva;
 import br.com.sobrabem.dto.request.DoacaoRequest;
 import br.com.sobrabem.dto.response.DoacaoResponse;
 import br.com.sobrabem.dto.response.ReservaResponse;
+import br.com.sobrabem.email.ReservaEmailEvent;
 import br.com.sobrabem.exception.CodigoErro;
 import br.com.sobrabem.exception.NegocioException;
 import br.com.sobrabem.repository.CategoriaRepository;
@@ -16,6 +18,7 @@ import br.com.sobrabem.repository.DoacaoRepository;
 import br.com.sobrabem.repository.ReservaRepository;
 import br.com.sobrabem.repository.UsuarioRepository;
 import br.com.sobrabem.security.Autenticado;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,13 +36,15 @@ public class DoacaoService {
     private final CategoriaRepository categorias;
     private final UsuarioRepository usuarios;
     private final ReservaRepository reservas;
+    private final ApplicationEventPublisher eventos;
 
-    public DoacaoService(DoacaoRepository doacoes, CategoriaRepository categorias,
-                         UsuarioRepository usuarios, ReservaRepository reservas) {
+    public DoacaoService(DoacaoRepository doacoes, CategoriaRepository categorias, UsuarioRepository usuarios,
+                         ReservaRepository reservas, ApplicationEventPublisher eventos) {
         this.doacoes = doacoes;
         this.categorias = categorias;
         this.usuarios = usuarios;
         this.reservas = reservas;
+        this.eventos = eventos;
     }
 
     @Transactional
@@ -60,13 +65,6 @@ public class DoacaoService {
     public Page<DoacaoResponse> vitrine(Long categoriaId, String cidade, Pageable pageable) {
         String filtroCidade = (cidade == null || cidade.isBlank()) ? null : cidade.trim();
         return doacoes.buscarVitrine(Instant.now(), categoriaId, filtroCidade, pageable).map(DoacaoResponse::de);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ReservaResponse> reservasDaDoacao(Long doadorId, Long id, StatusReserva status, Pageable pageable) {
-        Doacao doacao = buscarEntidade(id);
-        exigirDono(doacao, doadorId);
-        return reservas.buscarDaDoacao(id, status, pageable).map(r -> ReservaResponse.de(r, false));
     }
 
     @Transactional(readOnly = true)
@@ -111,6 +109,7 @@ public class DoacaoService {
         doacao.cancelar();
         for (Reserva reserva : reservas.findByDoacaoIdAndStatus(id, StatusReserva.ATIVA)) {
             reserva.cancelar();
+            eventos.publishEvent(ReservaEmailEvent.cancelada(reserva, Papel.DOADOR));
         }
         return DoacaoResponse.de(doacao);
     }
@@ -125,6 +124,13 @@ public class DoacaoService {
             throw new NegocioException(CodigoErro.REGISTRO_EM_USO, "A doação já tem reservas; use o cancelamento");
         }
         doacoes.delete(doacao);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ReservaResponse> reservasDaDoacao(Long doadorId, Long id, StatusReserva status, Pageable pageable) {
+        Doacao doacao = buscarEntidade(id);
+        exigirDono(doacao, doadorId);
+        return reservas.buscarDaDoacao(id, status, pageable).map(r -> ReservaResponse.de(r, false));
     }
 
     private void validarPrazo(Instant prazo, Categoria categoria) {
