@@ -3,16 +3,19 @@ package br.com.sobrabem.service;
 import br.com.sobrabem.domain.entity.Doacao;
 import br.com.sobrabem.domain.entity.Reserva;
 import br.com.sobrabem.domain.entity.Usuario;
+import br.com.sobrabem.domain.enums.Papel;
 import br.com.sobrabem.domain.enums.StatusDoacao;
 import br.com.sobrabem.domain.enums.StatusReserva;
 import br.com.sobrabem.dto.request.ReservaRequest;
 import br.com.sobrabem.dto.request.RetiradaRequest;
 import br.com.sobrabem.dto.response.ReservaResponse;
+import br.com.sobrabem.email.ReservaEmailEvent;
 import br.com.sobrabem.exception.CodigoErro;
 import br.com.sobrabem.exception.NegocioException;
 import br.com.sobrabem.repository.DoacaoRepository;
 import br.com.sobrabem.repository.ReservaRepository;
 import br.com.sobrabem.repository.UsuarioRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,11 +31,14 @@ public class ReservaService {
     private final ReservaRepository reservas;
     private final DoacaoRepository doacoes;
     private final UsuarioRepository usuarios;
+    private final ApplicationEventPublisher eventos;
 
-    public ReservaService(ReservaRepository reservas, DoacaoRepository doacoes, UsuarioRepository usuarios) {
+    public ReservaService(ReservaRepository reservas, DoacaoRepository doacoes, UsuarioRepository usuarios,
+                          ApplicationEventPublisher eventos) {
         this.reservas = reservas;
         this.doacoes = doacoes;
         this.usuarios = usuarios;
+        this.eventos = eventos;
     }
 
     @Transactional
@@ -62,6 +68,8 @@ public class ReservaService {
             if (violou(e, "SB_UX_RESERVA_ATIVA")) throw reservaDuplicada();
             throw e;
         }
+
+        eventos.publishEvent(ReservaEmailEvent.criada(reserva));
         return ReservaResponse.de(reserva, true);
     }
 
@@ -84,6 +92,7 @@ public class ReservaService {
 
         reserva.cancelar();
         reserva.getDoacao().devolverSaldo(reserva.getQuantidade());
+        eventos.publishEvent(ReservaEmailEvent.cancelada(reserva, Papel.RECEPTOR));
         return ReservaResponse.de(reserva, true);
     }
 
@@ -96,7 +105,6 @@ public class ReservaService {
         if (reserva.getStatus() != StatusReserva.ATIVA) {
             throw NegocioException.estadoInvalido("Só reservas ATIVA podem ser retiradas");
         }
-        // aceita minúsculas: o doador digita o que o receptor fala ou mostra
         if (!reserva.getCodigoRetirada().equalsIgnoreCase(req.codigoRetirada().trim())) {
             throw new NegocioException(CodigoErro.CODIGO_RETIRADA_INVALIDO, "O código de retirada não confere");
         }
@@ -104,7 +112,6 @@ public class ReservaService {
         return ReservaResponse.de(reserva, false);
     }
 
-    /** ADMIN. Se a reserva ainda estava ATIVA, o saldo volta para a doação. */
     @Transactional
     public void excluir(Long id) {
         Reserva reserva = travarComDoacao(id);
@@ -114,21 +121,14 @@ public class ReservaService {
         reservas.delete(reserva);
     }
 
-    /**
-     * Trava a linha da doação (SELECT ... FOR UPDATE) antes de ler a reserva.
-     * Assim, operações simultâneas na mesma doação ficam em fila, sempre na mesma ordem
-     * (doação, depois reserva), o que evita deadlock.
-     */
     private Reserva travarComDoacao(Long reservaId) {
         Long doacaoId = reservas.buscarIdDaDoacao(reservaId)
                 .orElseThrow(() -> NegocioException.naoEncontrado("Reserva não encontrada"));
         doacoes.buscarParaAtualizar(doacaoId);
-        // a doação travada já está na memória do Hibernate: reserva.getDoacao() devolve essa mesma instância
         return reservas.findById(reservaId)
                 .orElseThrow(() -> NegocioException.naoEncontrado("Reserva não encontrada"));
     }
 
-    /** O UPDATE afetou 0 linhas: relê a doação para dizer o motivo certo. */
     private NegocioException motivoDaRecusa(Long doacaoId, Instant agora) {
         Doacao doacao = doacoes.findById(doacaoId).orElseThrow();
         if (doacao.getStatus() != StatusDoacao.ATIVA || !doacao.getPrazoRetirada().isAfter(agora)) {
