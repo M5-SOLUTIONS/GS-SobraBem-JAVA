@@ -1,5 +1,6 @@
 package br.com.sobrabem.exception;
 
+import br.com.sobrabem.ai.IaIndisponivelException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,6 +60,13 @@ public class GlobalExceptionHandler {
                 List.of(new CampoErro(ex.getName(), "valor inválido")));
     }
 
+    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
+    public ResponseEntity<ProblemDetail> ordenacaoInvalida(RuntimeException ex) {
+        log.warn("Parâmetro de consulta inválido: {}", ex.getMessage());
+        return erro(CodigoErro.VALIDACAO, "1 campo inválido",
+                List.of(new CampoErro("sort", "campo de ordenação inválido")));
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ProblemDetail> naoAutenticado(AuthenticationException ex) {
         return erro(CodigoErro.NAO_AUTENTICADO, "Token ausente, inválido ou expirado", List.of());
@@ -67,6 +75,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ProblemDetail> acessoNegado(AccessDeniedException ex) {
         return erro(CodigoErro.ACESSO_NEGADO, "Seu papel não permite esta operação", List.of());
+    }
+
+    @ExceptionHandler(IaIndisponivelException.class)
+    public ResponseEntity<ProblemDetail> iaIndisponivel(IaIndisponivelException ex) {
+        log.warn("IA indisponível: {}", ex.getMessage(), ex.getCause());
+        return erro(CodigoErro.IA_INDISPONIVEL, "Não foi possível gerar a orientação agora; tente de novo ou escreva à mão",
+                List.of());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -83,14 +98,6 @@ public class GlobalExceptionHandler {
         }
         log.error("Erro inesperado", ex);
         return erro(CodigoErro.ERRO_INTERNO, "Erro inesperado no servidor", List.of());
-    }
-
-    /** ?sort=campoQueNaoExiste */
-    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
-    public ResponseEntity<ProblemDetail> ordenacaoInvalida(RuntimeException ex) {
-        log.warn("Parâmetro de consulta inválido: {}", ex.getMessage());
-        return erro(CodigoErro.VALIDACAO, "1 campo inválido",
-                List.of(new CampoErro("sort", "campo de ordenação inválido")));
     }
 
     private ResponseEntity<ProblemDetail> erro(CodigoErro codigo, String detalhe, List<CampoErro> erros) {
