@@ -1,0 +1,10 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: sobrabem-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP (a API)
+      - "15672:15672"   # painel web
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-sobrabem}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-sobrabem}
