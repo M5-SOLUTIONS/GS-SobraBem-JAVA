@@ -11,6 +11,7 @@ import br.com.sobrabem.domain.enums.Unidade;
 import br.com.sobrabem.dto.request.DoacaoRequest;
 import br.com.sobrabem.dto.response.DoacaoResponse;
 import br.com.sobrabem.exception.CampoErro;
+import br.com.sobrabem.email.ReservaEmailEvent;
 import br.com.sobrabem.exception.CodigoErro;
 import br.com.sobrabem.exception.NegocioException;
 import br.com.sobrabem.repository.CategoriaRepository;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +51,8 @@ class DoacaoServiceTest {
     UsuarioRepository usuarios;
     @Mock
     ReservaRepository reservas;
+    @Mock
+    ApplicationEventPublisher eventos;
     @InjectMocks
     DoacaoService service;
 
@@ -159,6 +163,7 @@ class DoacaoServiceTest {
         assertThat(r.status()).isEqualTo(StatusDoacao.CANCELADA);
         assertThat(r1.getStatus()).isEqualTo(StatusReserva.CANCELADA);
         assertThat(r2.getStatus()).isEqualTo(StatusReserva.CANCELADA);
+        verify(eventos, times(2)).publishEvent(any(ReservaEmailEvent.class)); // um e-mail por receptor
     }
 
     @Test
