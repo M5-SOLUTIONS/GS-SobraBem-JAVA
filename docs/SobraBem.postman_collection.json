@@ -4520,6 +4520,236 @@
           ]
         }
       ]
+    },
+    {
+      "name": "06 IA",
+      "item": [
+        {
+          "name": "Orientação de conservação (doador) → 200",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/orientacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ia",
+                "orientacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Iogurte natural\",\n  \"descricao\": \"potes de 170 g\",\n  \"categoriaId\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Vale para os dois modos: gemini (IA real) e fake (resposta fixa)",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('campos do contrato', () => ['orientacao', 'fontes', 'aviso'].forEach(c => pm.expect(r).to.have.property(c)));",
+                  "pm.test('fontes é uma lista', () => pm.expect(r.fontes).to.be.an('array'));",
+                  "pm.test('orientação OU aviso, nunca os dois', () => {",
+                  "  if (r.orientacao !== null) { pm.expect(r.orientacao).to.be.a('string').and.not.empty; pm.expect(r.aviso).to.eql(null); }",
+                  "  else { pm.expect(r.aviso).to.be.a('string').and.not.empty; pm.expect(r.fontes).to.have.lengthOf(0); }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Receptor pedindo orientação → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/orientacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ia",
+                "orientacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Iogurte natural\",\n  \"categoriaId\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenR1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('codigo ACESSO_NEGADO', () => pm.expect(pm.response.json().codigo).to.eql('ACESSO_NEGADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Título curto e sem categoria → 400 com 2 erros",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/orientacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ia",
+                "orientacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Io\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const e = pm.response.json();",
+                  "pm.test('codigo VALIDACAO', () => pm.expect(e.codigo).to.eql('VALIDACAO'));",
+                  "pm.test('erros em titulo e categoriaId', () => pm.expect(e.erros.map(x => x.campo)).to.include.members(['titulo', 'categoriaId']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categoria inexistente → 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/orientacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ia",
+                "orientacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Iogurte natural\",\n  \"categoriaId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('codigo NAO_ENCONTRADO', () => pm.expect(pm.response.json().codigo).to.eql('NAO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
