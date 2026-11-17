@@ -10,6 +10,7 @@ import br.com.sobrabem.domain.enums.StatusReserva;
 import br.com.sobrabem.dto.request.ReservaRequest;
 import br.com.sobrabem.dto.request.RetiradaRequest;
 import br.com.sobrabem.dto.response.ReservaResponse;
+import br.com.sobrabem.email.ReservaEmailEvent;
 import br.com.sobrabem.exception.CodigoErro;
 import br.com.sobrabem.exception.NegocioException;
 import br.com.sobrabem.repository.DoacaoRepository;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
@@ -41,6 +43,8 @@ class ReservaServiceTest {
     DoacaoRepository doacoes;
     @Mock
     UsuarioRepository usuarios;
+    @Mock
+    ApplicationEventPublisher eventos;
     @InjectMocks
     ReservaService service;
 
@@ -151,6 +155,7 @@ class ReservaServiceTest {
         assertThat(r.quantidade()).isEqualTo(4);
         assertThat(r.codigoRetirada()).matches("[A-HJ-NP-Z2-9]{6}"); // sem 0, O, 1 e I
         verify(reservas).saveAndFlush(any(Reserva.class));
+        verify(eventos).publishEvent(any(ReservaEmailEvent.class));
     }
 
     @Test
@@ -165,6 +170,7 @@ class ReservaServiceTest {
         assertThat(r.status()).isEqualTo(StatusReserva.CANCELADA);
         assertThat(doacao.getQuantidadeDisponivel()).isEqualTo(4);
         assertThat(doacao.getStatus()).isEqualTo(StatusDoacao.ATIVA);
+        verify(eventos).publishEvent(any(ReservaEmailEvent.class));
     }
 
     @Test
