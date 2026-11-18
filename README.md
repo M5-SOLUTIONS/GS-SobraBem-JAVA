@@ -4,9 +4,9 @@ Padarias, feiras e mercados publicam a comida que sobrou no fim do dia; ONGs e f
 da sua cidade, reservam uma quantidade e retiram no balcão com um código. Esta é a API REST usada pelo
 app mobile.
 
-**API publicada:** https://gs-sobrabem-java.onrender.com  
+**API publicada:** https://gs-sobrabem-java-final.onrender.com  
 **Swagger:** https://gs-sobrabem-java.onrender.com/swagger-ui.html  
-**Vídeo pitch:** <link do vídeo no YouTube>
+**Vídeo pitch:** https://youtu.be/g3DAfSZLWVM
 
 > O serviço roda no plano gratuito do Render, que desliga a aplicação depois de um tempo sem acesso.
 > O primeiro acesso depois disso leva alguns minutos, enquanto a API sobe de novo.
@@ -15,10 +15,13 @@ app mobile.
 
 ## Integrantes
 
-| Nome | RM | Turma |
-|---|---|---|
-|  |  |  |
-|  |  |  |
+| Nome | RM |
+|---|---|
+| Daniel Fonseca de Almeida | RM 563045 |
+| Erick de Faria Gama | RM 561951 |
+| Guilherme Batista Cintra | RM 562850 |
+| Matheus Nascimento Corregio | RM 563765 |
+| Pedro Fonseca de Almeida | RM 563466 |
 
 ---
 
