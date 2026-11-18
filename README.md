@@ -834,7 +834,7 @@ Cenários cobertos:
 A API está publicada no **Render**, a partir do `Dockerfile` do projeto, com o banco Oracle da FIAP e o
 RabbitMQ no **CloudAMQP**.
 
-**URL:** https://gs-sobrabem-java.onrender.com
+**URL:** https://gs-sobrabem-java-final.onrender.com
 
 ---
 
