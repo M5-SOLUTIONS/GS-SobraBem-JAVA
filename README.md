@@ -5,7 +5,7 @@ da sua cidade, reservam uma quantidade e retiram no balcão com um código. Esta
 app mobile.
 
 **API publicada:** https://gs-sobrabem-java-final.onrender.com  
-**Swagger:** https://gs-sobrabem-java.onrender.com/swagger-ui.html  
+**Swagger:** https://gs-sobrabem-java-final.onrender.com/swagger-ui.html  
 **Vídeo pitch:** https://youtu.be/g3DAfSZLWVM
 
 > O serviço roda no plano gratuito do Render, que desliga a aplicação depois de um tempo sem acesso.
